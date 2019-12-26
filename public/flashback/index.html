@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flashback</title>
+    <!--add bable to project using cdn-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <!--additional react and react-dom libraries-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.0.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.0.0/umd/react-dom.development.js"></script>
+    <!-- add css styelsheet-->
+    <link rel="stylesheet" type="text/css" href="index.css"></link>
+    <!--:-->
+    <!--13:  updated cardData with additional properties, added flip state in Card component and flipCard method, and updated Card render method-->
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type='text/babel'>
+      const cardData = [{
+        front: {
+          question: 'You may know that React was created at _________.',
+          hint: 'This company\'s site is known for being written in PHP.'
+        },
+        back: {
+          image: './images/Facebook.jpg',
+          answer: 'Facebook',
+          description: 'An engineer at the company negotiated with his manager to try a 6-month experiment in React.'
+        }
+      },
+      {
+        front: {
+          question: 'React started as a JavaScript port of _________.',
+          hint: 'This library is an HTML component framework for an extension of PHP.'
+        },
+        back: {
+          image: './images/XHP.png',
+          answer: 'XHP',
+          description: 'The concept of React was born from Angular and XHP.'
+        }
+      },
+      {
+        front: {
+          question: 'React was created by _________.',
+          hint: 'This software engineer wanted to experiment with taking XHP in-browser with JavaScript.'
+        },
+        back: {
+          image: './images/JordanWalke.png',
+          answer: 'Jordan Walke',
+          description: 'At the time, he was working on Facebook Ads. He later moved to Product Infrastructure to focus on React full-time.'
+        }
+      },
+      {
+        front: {
+          question: 'React\'s first deploy was on Facebook\'s _________ in 2011.',
+          hint: 'It was React that made \'liking\' your friends\' posts possible.'
+        },
+        back: {
+          image: './images/NewsFeed.png',
+          answer: 'News Feed',
+          description: 'The first version of Instagram\'s feed was also built using React. They were the first \'external\' user of React.'
+        }
+      },
+      {
+        front: {
+          question: 'At JSConf US in May 2013, React was _________.',
+          hint: 'Today, websites like Netflix, Airbnb, The New York Times, Tesla, Instagram, and more use React.'
+        },
+        back: {
+          image: './images/Open-Sourced.jpg',
+          answer: 'open-sourced',
+          description: 'React is maintained by Instagram, Facebook, and a community of individual developers and corporations.'
+        }
+      },
+      {
+        front: {
+          question: 'React allows you to break complex user interfaces into _________.',
+          hint: 'This concept of React uses JSX, which has HTML-like syntax, to generate real HTML using JavaScript.'
+        },
+        back: {
+          image: './images/Components.jpg',
+          answer: 'components',
+          description: 'Components accept inputs called props and return outputs describing what should appear on the screen.'
+        }
+      },
+      {
+        front: {
+          question: 'A _________ holds the data that can change during interaction with the application.',
+          hint: 'Whenever this changes, React calls the render method and applies any changes to the HTML of the page.'
+        },
+        back: {
+          image: './images/State.jpg',
+          answer: 'state',
+          description: 'State makes it simple and easy to organize aspects of the web application that change.'
+        } 
+      }];
+
+      class App extends React.Component {
+        constructor() {
+          super();
+          this.state = {
+            cardData: []
+          };
+        }
+
+        componentDidMount() {
+          this.setState({ cardData: cardData});
+        }
+
+        shuffleBackward = () => {
+          {/*console.log('Shuffle Backward!');*/}
+          const { cardData } = this.state;
+          const newCardData = [cardData[6],...cardData.slice(0,6)];
+          this.setState({ cardData: newCardData });
+        }
+
+        shuffleForward = () => {
+          {/*console.log('Shuffle Forward!');*/}
+          const { cardData } = this.state;
+          const newCardData = [...cardData.slice(1), cardData[0]];
+          this.setState({ cardData: newCardData });
+        }
+
+        render() {
+          return (
+            <div className='App'>
+              <h1 className='title'>
+                Flashback
+              </h1>
+              <p className='sub-title'>
+                An interactive flash cards app about React.
+              </p>
+              <div className="card-list">
+                {this.state.cardData.map((card, index) => <Card key={index} index={index} front={card.front} back={card.back} />)}
+              </div>
+              <div className="buttons">
+                <button onClick={() => this.shuffleBackward()}>&lt;</button>
+                <button onClick={() => this.shuffleForward()}>&gt;</button>
+              </div>
+            </div>
+          );
+        }
+      }
+
+      class Card extends React.Component {
+        constructor() {
+          super();
+          this.state = {
+            flipped: false
+          };
+        }
+
+        componentDidUpdate(prevProps, prevState) {
+          if (prevState.flipped === true) {
+            this.setState({ flipped: false });
+          }
+        }
+
+        cardClass = () => this.state.flipped ? "Card -back" : "Card -front";
+
+        flipCard = () => {
+          if (this.props.index === 0) {
+            this.setState({ flipped: !this.state.flipped});
+          }
+        }
+
+        render() {
+          return (
+            <div className={this.cardClass()} onClick={() => this.flipCard()}>
+              {!this.state.flipped ?
+                <div className="front">
+                  <h3 className="question">
+                    {this.props.front.question}
+                  </h3>
+                  <p className="hint">
+                    <span>Hint:</span> {this.props.front.hint}
+                  </p>
+                </div>
+                :
+                <div className="back">
+                  <div className="image">
+                    <img src={this.props.back.image} />
+                  </div>
+                  <h3 className="answer">
+                    {this.props.back.answer}
+                  </h3>
+                  <p className="description">
+                    {this.props.back.description}
+                  </p>
+                </div>
+              }
+            </div>
+          );
+        }
+      };
+
+      ReactDOM.render(<App />, document.getElementById('app'));
+    </script>
+  </body>
+</html>

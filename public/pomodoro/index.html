@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pomodoro Clock</title>
+    <!--add bable to project using cdn -wiki it-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <!--additional reac and reac-dom libraries-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.0.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.0.0/umd/react-dom.development.js"></script>
+    <!-- add css styelsheet-->
+    <link rel="stylesheet" type="text/css" href="index.css"></link>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="text/babel">
+      class App extends React.Component {
+        constructor(props) {
+          super(props);
+          this.handleSessionChange = this.handleSessionChange.bind(this);
+          this.handleBreakChange = this.handleBreakChange.bind(this);
+          this.handleTime = this.handleTime.bind(this);
+          this.handleClockEnd = this.handleClockEnd.bind(this);
+          this.state = {session: "25", break: "5", isSessionOn: true, isTimerOn: false};
+        }
+
+        handleSessionChange(num) {
+          this.setState({session: num})
+        }
+
+        handleBreakChange(num) {
+          this.setState({break: num})
+        }
+
+        handleClockEnd() {
+          this.setState(prevState => ({
+            isSessionOn: !prevState.isSessionOn
+          }));
+        }
+
+        handleTime() {
+          this.setState(prevState => ({
+            isTimerOn: !prevState.isTimerOn
+          }));
+        }
+
+        render() {
+          const currentSession = this.state.isSessionOn;
+          const currentClockTitle = currentSession ? "Session": "Break!";
+          const currentMinute = currentSession ? this.state.session: this.state.break;
+          return (
+            <div>
+              <h1>Pomodoro Clock</h1>
+              <header>
+                  <div className="session">
+                    <Ctrl name="Break" num={this.state.break} onNumChange={this.handleBreakChange} timer={!this.state.isTimerOn}/>
+                    <Ctrl name="Session" num={this.state.session} onNumChange={this.handleSessionChange} timer={!this.state.isTimerOn}/>
+                  </div>
+              </header>
+              <section>
+                <Timer name={currentClockTitle} min={currentMinute} timer={this.state.isTimerOn} onClockEnd={this.handleClockEnd}/>
+                <div className="wrapper">
+                  <button className="button" onClick={this.handleTime}>{this.state.isTimerOn ? 'Pause': 'Start'}</button>
+                </div>
+              </section>
+            </div>
+          );
+        }
+      }
+
+      class Ctrl extends React.Component {
+        handleChange = (param) => (e) => {
+          //ensure no state change to num while timer is running
+          if (param != this.props.num) {
+            this.props.onNumChange(param);
+          } 
+        }
+
+        render() {
+          const decrement = (this.props.num > 1 && this.props.timer)? (parseInt(this.props.num) - 1).toString(): this.props.num;
+          const increment = (this.props.num < 30 && this.props.timer)? (parseInt(this.props.num) + 1).toString(): this.props.num;
+          return (
+            <div className="ctrl">
+              <p>{this.props.name} Length</p>
+              <button className="minus" onClick={this.handleChange(decrement)}>-</button>
+              <span className="time">{this.props.num}</span>
+              <button className="plus" onClick={this.handleChange(increment)}>+</button>
+            </div>
+          );
+        }
+      }
+
+      class Timer extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {orig: 1, seconds: 1};
+        }
+
+        componentDidMount() {
+          const newSeconds = parseInt(this.props.min) * 60;
+          const newMinutes = this.props.min;
+          this.setState({orig: newMinutes, seconds: newSeconds });
+        }
+
+        componentWillUnmount() {
+          clearInterval(this.timerID);
+        }
+
+        componentWillReceiveProps(nextProps){
+          if (this.props.min != nextProps.min || this.props.name != nextProps.name) {
+            this.setState({orig: nextProps.min, seconds: parseInt(nextProps.min) * 60});
+            //console.log('old: '+this.state.orig + ' new: '+ nextProps.min);
+          }
+          if (nextProps.timer) {
+            //console.log("componentWillReceiveProps, min:"+this.props.min);
+            this.startTimer();
+          }
+          if (!nextProps.timer) {
+            //console.log("componentWillReceiveProps, min:" + this.props.min);
+            this.stopTimer();
+          }
+        }
+
+        startTimer() {
+          //console.log('start timer ID: ' + this.timerID + ' min: ' + this.props.min + ' session:' + this.props.name+' on?:' + this.props.timer);
+          this.timerID = setInterval(() => this.tick(), 1000);
+        }
+
+        stopTimer() {
+          clearInterval(this.timerID);
+          //console.log('stop timer: '+this.timerID + ' min: ' + this.props.min + ' session:' + this.props.name+' on?:' + this.props.timer);
+        }
+
+        tick() {
+          if (this.state.seconds > 0) {
+            const newSeconds = this.state.seconds - 1
+            this.setState({seconds: newSeconds});
+          }
+          if (this.state.seconds <= 0) {
+            this.stopTimer();
+            //console.log('this state is: ' + this.state.seconds);
+            this.props.onClockEnd();
+          }
+        }
+
+        render() {
+          const piece = (parseInt(this.state.seconds));
+          const full = parseInt(this.state.orig) * 60;
+          const fillPercent = Math.floor((1-piece/full)*100);
+          const date = new Date(piece*1000);
+          const formatTime = date.toISOString().substr(14, 5);
+          const spanColor = this.props.name == 'Session'? '#009999':'#cc0000';
+          const spanStyle = {
+          height: fillPercent+'%',
+          backgroundColor: spanColor,
+          };
+          //console.log('piece:'+piece+' full:'+full+' fillPercent:'+fillPercent);
+          return (
+            <div className="timer">
+              <p className="title">{this.props.name}</p>
+              <p>{formatTime}</p>
+              <span className="fill" style={spanStyle}></span>
+            </div>
+          );
+        }
+      }
+
+      ReactDOM.render(<App/>, document.getElementById('app'));
+    </script>
+  </body>
+</html> 
